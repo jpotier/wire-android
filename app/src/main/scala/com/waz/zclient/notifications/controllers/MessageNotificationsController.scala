@@ -116,7 +116,8 @@ class MessageNotificationsController(bundleEnabled: Boolean = Build.VERSION.SDK_
     uiActive <- inject[UiLifeCycle].uiActive
     selfId   <- selfId
     convId   <- convController.currentConvId.map(Option(_)).orElse(Signal.const(Option.empty[ConvId]))
-    convs    <- convsStorage.map(_.conversations)
+    storage  <- convsStorage
+    convs    <- Signal.future(storage.list())
     page     <- navigationController.visiblePage
   } yield
     accs.map { accId =>
