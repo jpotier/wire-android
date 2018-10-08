@@ -78,7 +78,11 @@ class ConversationController(implicit injector: Injector, context: Context, ec: 
     convsStorage.head.flatMap(_.get(convId))
 
   val currentConvType: Signal[ConversationType] = currentConv.map(_.convType).disableAutowiring()
-  val currentConvName: Signal[String] = currentConv.map(_.displayName) // the name of the current conversation can be edited (without switching)
+  val currentConvName: Signal[String] = currentConv.map(_.displayName).map {
+    case ""   => getString(R.string.conversation_list__def_conv_name)
+    case name => name
+  } // the name of the current conversation can be edited (without switching)
+
   val currentConvIsVerified: Signal[Boolean] = currentConv.map(_.verified == Verification.VERIFIED)
   val currentConvIsGroup: Signal[Boolean] =
     for {
