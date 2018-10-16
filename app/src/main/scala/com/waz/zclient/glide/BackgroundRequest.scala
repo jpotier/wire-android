@@ -17,17 +17,22 @@
  */
 package com.waz.zclient.glide
 
-import java.io.InputStream
-
 import android.content.Context
-import com.bumptech.glide.load.model.{ModelLoader, ModelLoaderFactory, MultiModelLoaderFactory}
+import android.graphics.drawable.Drawable
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.waz.model.AssetId
-import com.waz.zclient.WireContext
+import com.waz.zclient.GlideRequest
+import com.waz.zclient.glide.transformations.{BackgroundColorTransformation, BlurTransformation, ScaleTransformation}
 
-class AssetModelLoaderFactory(context: Context) extends ModelLoaderFactory[AssetId, InputStream] {
-  override def build(multiFactory: MultiModelLoaderFactory): ModelLoader[AssetId, InputStream] = {
-    new AssetModelLoader()(context, context.asInstanceOf[WireContext].injector)
-  }
+object BackgroundRequest {
 
-  override def teardown(): Unit = {}
+  val ScaleValue = 1.4f
+
+  def apply(assetId: AssetId)(implicit context: Context): GlideRequest[Drawable] =
+    GlideDrawable(assetId).transforms(new CenterCrop(),
+      new ScaleTransformation(ScaleValue),
+      new BlurTransformation(),
+      new BackgroundColorTransformation())
+      .transition(DrawableTransitionOptions.withCrossFade())
 }

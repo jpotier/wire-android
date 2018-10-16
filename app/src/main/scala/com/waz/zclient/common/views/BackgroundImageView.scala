@@ -20,12 +20,11 @@ package com.waz.zclient.common.views
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.ImageView
-import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.waz.model.AssetId
 import com.waz.service.ZMessaging
 import com.waz.utils.events.Signal
 import com.waz.zclient.ViewHelper
-import com.waz.zclient.glide.{BackgroundColorTransformation, BlurTransformation, GlideDrawable, ScaleTransformation}
+import com.waz.zclient.glide._
 
 class BackgroundImageView(val context: Context, val attrs: AttributeSet, val defStyleAttr: Int) extends ImageView(context, attrs, defStyleAttr) with ViewHelper {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
@@ -38,13 +37,5 @@ class BackgroundImageView(val context: Context, val attrs: AttributeSet, val def
     Some(picture) <- z.users.selfUser.map(_.picture)
   } yield picture
 
-  pictureId.onUi { id =>
-    GlideDrawable(id)
-      .transforms(
-        new CenterCrop(),
-        new ScaleTransformation(1.4f),
-        new BlurTransformation(),
-        new BackgroundColorTransformation())
-      .into(this)
-  }
+  pictureId.onUi(id => BackgroundRequest(id).into(this))
 }

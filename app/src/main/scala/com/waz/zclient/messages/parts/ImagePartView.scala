@@ -20,20 +20,21 @@ package com.waz.zclient.messages.parts
 import android.content.Context
 import android.util.AttributeSet
 import android.view.{View, ViewGroup}
-import android.widget.{FrameLayout, LinearLayout}
+import android.widget.{FrameLayout, ImageView, LinearLayout}
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.waz.ZLog.ImplicitTag._
 import com.waz.model.MessageContent
-import com.waz.service.downloads.AssetLoader.DownloadOnWifiOnlyException
 import com.waz.service.messages.MessageAndLikes
 import com.waz.threading.Threading
+import com.waz.utils.events.Signal
 import com.waz.zclient.common.controllers.AssetsController
 import com.waz.zclient.controllers.drawing.IDrawingController.DrawingMethod
 import com.waz.zclient.conversation.ConversationController
+import com.waz.zclient.glide.GlideDrawable
 import com.waz.zclient.messages.MessageView.MsgBindOptions
 import com.waz.zclient.messages.parts.assets.ImageLayoutAssetPart
 import com.waz.zclient.messages.{MessageViewPart, MsgPart}
 import com.waz.zclient.utils.RichView
-import com.waz.zclient.common.views.ImageAssetDrawable.State.Failed
 import com.waz.zclient.{R, ViewHelper}
 
 class ImagePartView(context: Context, attrs: AttributeSet, style: Int) extends FrameLayout(context, attrs, style) with ImageLayoutAssetPart {
@@ -48,10 +49,15 @@ class ImagePartView(context: Context, attrs: AttributeSet, style: Int) extends F
 
   private val imageIcon = findById[View](R.id.image_icon)
 
-  val noWifi = imageDrawable.state.map {
+  private val imageView = findById[ImageView](R.id.image)
+
+  val noWifi = Signal.const(false)
+
+  //TODO: no wifi warning?
+  /*imageDrawable.state.map {
     case Failed(_, Some(DownloadOnWifiOnlyException)) => true
     case _ => false
-  }
+  }*/
 
   (for {
     noW  <- noWifi
@@ -62,6 +68,13 @@ class ImagePartView(context: Context, attrs: AttributeSet, style: Int) extends F
     message.currentValue foreach (assets.openDrawingFragment(_, drawingMethod))
 
   onClicked { _ => message.head.map(assets.showSingleImage(_, this))(Threading.Ui) }
+
+  message.map(_.assetId).onUi(
+    GlideDrawable(_)
+    .fitCenter()
+    .transition(DrawableTransitionOptions.withCrossFade())
+    .into(imageView)
+  )
 
   override def onInflated(): Unit = {}
 }

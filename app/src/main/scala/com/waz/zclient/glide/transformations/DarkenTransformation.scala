@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.waz.zclient.glide
+package com.waz.zclient.glide.transformations
 
 import java.nio.charset.Charset
 import java.security.MessageDigest
@@ -25,34 +25,27 @@ import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.waz.ZLog
 import com.waz.utils.returning
-import com.waz.zclient.common.views.BackgroundDrawable.SaturationValue
 
-class BackgroundColorTransformation extends BitmapTransformation {
+class DarkenTransformation(alpha: Int) extends BitmapTransformation{
 
   private implicit val Tag: String = ZLog.ImplicitTag.implicitLogTag
   private implicit val TagBytes: Array[Byte] = Tag.getBytes(Charset.forName("UTF-8"))
 
   override def transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap = {
-
     val bitmap = pool.get(outWidth, outHeight, Bitmap.Config.ARGB_8888)
 
-    val colorMatrix = returning(new ColorMatrix) {
-     _.setSaturation(SaturationValue)
-    }
-    val saturationPaint = returning(new Paint(Paint.ANTI_ALIAS_FLAG)){
-      _.setColorFilter(new ColorMatrixColorFilter(colorMatrix))
-    }
     val darkenPaint = returning(new Paint(Paint.ANTI_ALIAS_FLAG)){ p =>
       p.setColor(Color.BLACK)
-      p.setAlpha(148)
+      p.setAlpha(alpha)
     }
 
     val canvas = new Canvas(bitmap)
-    canvas.drawBitmap(toTransform, 0, 0, saturationPaint)
+    canvas.drawBitmap(toTransform, 0, 0, darkenPaint)
     canvas.drawPaint(darkenPaint)
     canvas.setBitmap(null)
 
     bitmap
+
   }
 
   override def updateDiskCacheKey(messageDigest: MessageDigest): Unit = messageDigest.digest(TagBytes)

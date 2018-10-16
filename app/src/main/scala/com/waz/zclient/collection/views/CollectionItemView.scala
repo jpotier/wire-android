@@ -18,13 +18,16 @@
 package com.waz.zclient.collection.views
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.support.v7.widget.{CardView, RecyclerView}
 import android.text.format.DateFormat
 import android.util.AttributeSet
 import android.view.HapticFeedbackConstants
 import android.view.View.OnClickListener
 import android.webkit.URLUtil
-import android.widget.TextView
+import android.widget.{ImageView, TextView}
+import com.bumptech.glide.request.target.CustomViewTarget
+import com.bumptech.glide.request.transition.Transition
 import com.waz.ZLog.ImplicitTag._
 import com.waz.model._
 import com.waz.service.ZMessaging
@@ -36,11 +39,11 @@ import com.waz.zclient.common.controllers.BrowserController
 import com.waz.zclient.common.views.ImageAssetDrawable.RequestBuilder
 import com.waz.zclient.common.views.ImageController.{ImageSource, WireImage}
 import com.waz.zclient.common.views.{ImageAssetDrawable, ProgressDotsDrawable, RoundedImageAssetDrawable}
+import com.waz.zclient.glide.GlideDrawable
 import com.waz.zclient.messages.controllers.MessageActionsController
 import com.waz.zclient.messages.parts.{EphemeralPartView, WebLinkPartView}
 import com.waz.zclient.messages.parts.assets.FileAssetPartView
 import com.waz.zclient.messages.{ClickableViewPart, MsgPart}
-import com.waz.zclient.pages.main.conversation.views.AspectRatioImageView
 import com.waz.zclient.utils.ZTimeFormatter._
 import com.waz.zclient.utils.{RichView, ViewUtils, _}
 import com.waz.zclient.{R, ViewHelper}
@@ -103,7 +106,7 @@ trait CollectionNormalItemView extends CollectionItemView with ClickableViewPart
   }
 }
 
-class CollectionImageView(context: Context) extends AspectRatioImageView(context) with CollectionItemView {
+class CollectionImageView(context: Context) extends ImageView(context) with CollectionItemView {
   setId(R.id.collection_image_view)
 
   override val tpe: MsgPart = MsgPart.Image
@@ -121,6 +124,20 @@ class CollectionImageView(context: Context) extends AspectRatioImageView(context
   setPadding(padding, padding, padding, padding)
 
   val image: Signal[ImageSource] = messageData.map(md => WireImage(md.assetId))
+
+  messageData.map(_.assetId).onUi { id =>
+    GlideDrawable(id)
+      //.transforms(new CenterCrop(), new RoundedCorners(CornerRadius))
+      .into(new CustomViewTarget[CollectionImageView, Drawable](this) {
+      override def onResourceCleared(placeholder: Drawable): Unit = {}
+
+      override def onLoadFailed(errorDrawable: Drawable): Unit = {}
+
+      override def onResourceReady(resource: Drawable, transition: Transition[_ >: Drawable]): Unit = {
+        ephemeralDrawable(imageDrawable).onUi { setImageDrawable }
+      }
+    })
+  }
 
   private val imageDrawable =
     new RoundedImageAssetDrawable(image, scaleType = ImageAssetDrawable.ScaleType.CenterCrop,
@@ -140,7 +157,6 @@ class CollectionImageView(context: Context) extends AspectRatioImageView(context
   }
 
   def setMessageData(messageData: MessageData, width: Int, color: Int) = {
-    setAspectRatio(1)
     this.setWidth(width)
     this.setHeight(width)
     this.messageData ! messageData

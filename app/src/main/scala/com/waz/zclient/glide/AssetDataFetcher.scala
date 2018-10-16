@@ -23,12 +23,44 @@ import android.content.Context
 import com.bumptech.glide.Priority
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.data.DataFetcher
-import com.waz.zclient.R
+import com.waz.ZLog
+import com.waz.model.AssetId
+import com.waz.service.assets.AssetService.BitmapResult.{BitmapLoaded, LoadingFailed}
+import com.waz.ui.MemoryImageCache.BitmapRequest.Regular
+import com.waz.zclient.common.views.ImageController
+import com.waz.zclient.{Injectable, Injector}
+import com.waz.ZLog.ImplicitTag.implicitLogTag
+import com.waz.threading.Threading
+import com.waz.utils.wrappers.Bitmap
 
-class AssetDataFetcher(context: Context) extends DataFetcher[InputStream] {
+
+class AssetDataFetcher(assetId: AssetId)(implicit context: Context, inj: Injector) extends DataFetcher[InputStream] with Injectable {
+
+  //private lazy val zms = inject[Signal[ZMessaging]]
+  private lazy val imageController = inject[ImageController]
+
+  private lazy val bitmapSignal = imageController.imageSignal(assetId, Regular(300), forceDownload = true).collect {
+    case BitmapLoaded(bm, _) => Option(bm)
+    case LoadingFailed(_) => Option.empty[Bitmap]
+  }.disableAutowiring()
+
   override def loadData(priority: Priority, callback: DataFetcher.DataCallback[_ >: InputStream]): Unit = {
-    val is = context.getResources.openRawResource(R.raw.test_image)
-    callback.onDataReady(is)
+
+    ZLog.verbose(s"loadData $assetId")
+
+    bitmapSignal.head.foreach(_.foreach { bitmap =>
+
+      ZLog.verbose(s"bitmapSignal  $assetId")
+
+      import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+      import android.graphics.Bitmap.CompressFormat
+
+      val bos = new ByteArrayOutputStream()
+      bitmap.compress(CompressFormat.PNG, 0 , bos)
+      val bitmapData = bos.toByteArray
+      val is = new ByteArrayInputStream(bitmapData)
+      callback.onDataReady(is)
+    }) (Threading.Ui)
   }
 
   override def cleanup(): Unit = {}
@@ -37,5 +69,5 @@ class AssetDataFetcher(context: Context) extends DataFetcher[InputStream] {
 
   override def getDataClass: Class[InputStream] = classOf[InputStream]
 
-  override def getDataSource: DataSource = DataSource.LOCAL
+  override def getDataSource: DataSource = DataSource.REMOTE
 }

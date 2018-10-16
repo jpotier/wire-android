@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.waz.zclient.glide
+package com.waz.zclient.glide.transformations
 
 import java.nio.charset.Charset
 import java.security.MessageDigest

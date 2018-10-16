@@ -29,9 +29,7 @@ import com.waz.service.ZMessaging
 import com.waz.threading.Threading
 import com.waz.utils.events.Signal
 import com.waz.utils.returning
-import com.waz.zclient.common.views.ImageAssetDrawable
-import com.waz.zclient.common.views.ImageAssetDrawable.{RequestBuilder, ScaleType}
-import com.waz.zclient.common.views.ImageController.WireImage
+import com.waz.zclient.glide.GlideDrawable
 import com.waz.zclient.participants.UserRequester
 import com.waz.zclient.messages.UsersController
 import com.waz.zclient.pages.BaseFragment
@@ -122,12 +120,9 @@ class PendingConnectRequestFragment extends BaseFragment[PendingConnectRequestFr
   override def onViewCreated(view: View, savedInstanceState: Bundle): Unit = {
     userHandleView
 
-    val assetDrawable = new ImageAssetDrawable(
-      user.map(_.picture).collect { case Some(p) => WireImage(p) },
-      scaleType = ScaleType.CenterInside,
-      request = RequestBuilder.Round
-    )
-    imageViewProfile.foreach(_.setImageDrawable(assetDrawable))
+    user.map(_.picture).collect { case Some(p) => p }.onUi { id =>
+      imageViewProfile.foreach(GlideDrawable(id).circleCrop().into(_))
+    }
 
     userNameView.foreach { v =>
       val paddingTop =
