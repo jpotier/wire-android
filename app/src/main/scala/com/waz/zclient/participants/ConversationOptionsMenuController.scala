@@ -110,15 +110,15 @@ class ConversationOptionsMenuController(convId: ConvId, mode: Mode)(implicit inj
             Unmute
 
         builder += (if (conv.archived) Unarchive else Archive)
+
         if (isGroup) {
-          if (conv.isActive) {
-            builder ++= Set(notifications, Leave)
-          }
+          if (conv.isActive) builder += Leave
           builder += Delete
+          if (mode.inConversationList) builder += notifications
         } else {
           if (teamMember || connectStatus.contains(ACCEPTED) || isBot) {
             builder ++= Set(notifications, Delete)
-            if (!teamMember && connectStatus.contains(ACCEPTED)) builder ++= Set(Block)
+            if (!teamMember && connectStatus.contains(ACCEPTED)) builder += Block
           }
           else if (connectStatus.contains(PENDING_FROM_USER)) builder += Block
         }

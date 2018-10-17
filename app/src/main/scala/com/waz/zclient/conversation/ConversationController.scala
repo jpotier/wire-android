@@ -321,4 +321,11 @@ object ConversationController {
     }
   }
 
+  lazy val MuteSets = Seq(MuteSet.AllAllowed, MuteSet.OnlyMentionsAllowed, MuteSet.AllMuted)
+
+  def muteSetDisplayStringId(muteSet: MuteSet): Int = muteSet match {
+    case MuteSet.AllMuted            => R.string.conversation__action__notifications_nothing
+    case MuteSet.OnlyMentionsAllowed => R.string.conversation__action__notifications_mentions_only
+    case _                           => R.string.conversation__action__notifications_everything
+  }
 }

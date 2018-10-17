@@ -123,6 +123,10 @@ class GroupParticipantsFragment extends FragmentHelper {
       slideFragmentInFromRight(new EphemeralOptionsFragment(), EphemeralOptionsFragment.Tag)
     }
 
+    adapter.onNotificationsClick.onUi { _ =>
+      slideFragmentInFromRight(new NotificationsOptionsFragment(), NotificationsOptionsFragment.Tag)
+    }
+
     adapter.onShowAllParticipantsClick.onUi { _ =>
       slideFragmentInFromRight(new AllGroupParticipantsFragment(), AllGroupParticipantsFragment.Tag)
     }
