@@ -152,6 +152,14 @@
         <attr name="gray_on_unconnected" format="boolean"/>
     </declare-styleable>
 
+    <declare-styleable name="NewChatHead">
+        <attr name="isSelectable2" format="boolean"/>
+        <attr name="default_background2" format="color"/>
+        <attr name="is_round2" format="boolean"/>
+        <attr name="show_waiting2" format="boolean"/>
+        <attr name="gray_on_unconnected2" format="boolean"/>
+    </declare-styleable>
+
     <declare-styleable name="TopUserChathead">
         <attr name="chathead_size" format="dimension"/>
     </declare-styleable>

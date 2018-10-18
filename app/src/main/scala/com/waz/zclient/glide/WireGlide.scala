@@ -29,6 +29,7 @@ object WireGlide {
 }
 
 object GlideDrawable {
+  def apply(drawable: Drawable)(implicit context: Context): GlideRequest[Drawable] = WireGlide().load(drawable)
   def apply(assetId: AssetId)(implicit context: Context): GlideRequest[Drawable] = WireGlide().load(AssetIdRequest(assetId))
   def apply(assetData: AssetData)(implicit context: Context): GlideRequest[Drawable] = WireGlide().load(AssetDataRequest(assetData))
   def apply(assetRequest: AssetRequest)(implicit context: Context): GlideRequest[Drawable] = WireGlide().load(assetRequest)
