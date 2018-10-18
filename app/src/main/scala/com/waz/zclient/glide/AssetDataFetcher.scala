@@ -24,33 +24,34 @@ import com.bumptech.glide.Priority
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.data.DataFetcher
 import com.waz.ZLog
-import com.waz.model.AssetId
+import com.waz.ZLog.ImplicitTag.implicitLogTag
 import com.waz.service.assets.AssetService.BitmapResult.{BitmapLoaded, LoadingFailed}
+import com.waz.threading.Threading
 import com.waz.ui.MemoryImageCache.BitmapRequest.Regular
+import com.waz.utils.wrappers.Bitmap
 import com.waz.zclient.common.views.ImageController
 import com.waz.zclient.{Injectable, Injector}
-import com.waz.ZLog.ImplicitTag.implicitLogTag
-import com.waz.threading.Threading
-import com.waz.utils.wrappers.Bitmap
 
 
-class AssetDataFetcher(assetId: AssetId)(implicit context: Context, inj: Injector) extends DataFetcher[InputStream] with Injectable {
+class AssetDataFetcher(request: AssetRequest, width: Int)(implicit context: Context, inj: Injector) extends DataFetcher[InputStream] with Injectable {
 
-  //private lazy val zms = inject[Signal[ZMessaging]]
   private lazy val imageController = inject[ImageController]
 
-  private lazy val bitmapSignal = imageController.imageSignal(assetId, Regular(300), forceDownload = true).collect {
+  private lazy val bitmapSignal = (request match {
+    case AssetIdRequest(assetId) => imageController.imageSignal(assetId, Regular(width), forceDownload = true)
+    case AssetDataRequest(assetData) => imageController.imageSignal(assetData, Regular(width), forceDownload = true)
+  }).collect {
     case BitmapLoaded(bm, _) => Option(bm)
     case LoadingFailed(_) => Option.empty[Bitmap]
   }.disableAutowiring()
 
   override def loadData(priority: Priority, callback: DataFetcher.DataCallback[_ >: InputStream]): Unit = {
 
-    ZLog.verbose(s"loadData $assetId")
+    ZLog.verbose(s"loadData $request")
 
     bitmapSignal.head.foreach(_.foreach { bitmap =>
 
-      ZLog.verbose(s"bitmapSignal  $assetId")
+      ZLog.verbose(s"bitmapSignal  $request")
 
       import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
       import android.graphics.Bitmap.CompressFormat

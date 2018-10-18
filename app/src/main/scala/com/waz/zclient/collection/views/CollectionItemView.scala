@@ -1,24 +1,25 @@
 /**
- * Wire
- * Copyright (C) 2018 Wire Swiss GmbH
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+  * Wire
+  * Copyright (C) 2018 Wire Swiss GmbH
+  *
+  * This program is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License as published by
+  * the Free Software Foundation, either version 3 of the License, or
+  * (at your option) any later version.
+  *
+  * This program is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU General Public License for more details.
+  *
+  * You should have received a copy of the GNU General Public License
+  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  */
 package com.waz.zclient.collection.views
 
 import android.content.Context
-import android.graphics.drawable.Drawable
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.support.v7.widget.{CardView, RecyclerView}
 import android.text.format.DateFormat
 import android.util.AttributeSet
@@ -26,8 +27,8 @@ import android.view.HapticFeedbackConstants
 import android.view.View.OnClickListener
 import android.webkit.URLUtil
 import android.widget.{ImageView, TextView}
-import com.bumptech.glide.request.target.CustomViewTarget
-import com.bumptech.glide.request.transition.Transition
+import com.bumptech.glide.load.resource.bitmap.{CenterCrop, RoundedCorners}
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.waz.ZLog.ImplicitTag._
 import com.waz.model._
 import com.waz.service.ZMessaging
@@ -36,13 +37,10 @@ import com.waz.utils.events.{EventContext, EventStream, Signal, SourceSignal}
 import com.waz.utils.wrappers.AndroidURIUtil
 import com.waz.zclient.collection.controllers.CollectionController
 import com.waz.zclient.common.controllers.BrowserController
-import com.waz.zclient.common.views.ImageAssetDrawable.RequestBuilder
-import com.waz.zclient.common.views.ImageController.{ImageSource, WireImage}
-import com.waz.zclient.common.views.{ImageAssetDrawable, ProgressDotsDrawable, RoundedImageAssetDrawable}
-import com.waz.zclient.glide.GlideDrawable
+import com.waz.zclient.glide.{CustomImageViewTarget, GlideDrawable, WireGlide}
 import com.waz.zclient.messages.controllers.MessageActionsController
-import com.waz.zclient.messages.parts.{EphemeralPartView, WebLinkPartView}
 import com.waz.zclient.messages.parts.assets.FileAssetPartView
+import com.waz.zclient.messages.parts.{EphemeralPartView, WebLinkPartView}
 import com.waz.zclient.messages.{ClickableViewPart, MsgPart}
 import com.waz.zclient.utils.ZTimeFormatter._
 import com.waz.zclient.utils.{RichView, ViewUtils, _}
@@ -72,7 +70,7 @@ trait CollectionItemView extends ViewHelper with EphemeralPartView {
   }
 }
 
-trait CollectionNormalItemView extends CollectionItemView with ClickableViewPart{
+trait CollectionNormalItemView extends CollectionItemView with ClickableViewPart {
   lazy val messageTime: TextView = ViewUtils.getView(this, R.id.ttv__collection_item__time)
   lazy val messageUser: TextView = ViewUtils.getView(this, R.id.ttv__collection_item__user_name)
 
@@ -123,27 +121,18 @@ class CollectionImageView(context: Context) extends ImageView(context) with Coll
   setCropToPadding(true)
   setPadding(padding, padding, padding, padding)
 
-  val image: Signal[ImageSource] = messageData.map(md => WireImage(md.assetId))
+  private val target = new CustomImageViewTarget(this)
 
-  messageData.map(_.assetId).onUi { id =>
+  Signal(messageData.map(_.assetId), ephemeralColorDrawable).onUi { case (id, None) =>
     GlideDrawable(id)
-      //.transforms(new CenterCrop(), new RoundedCorners(CornerRadius))
-      .into(new CustomViewTarget[CollectionImageView, Drawable](this) {
-      override def onResourceCleared(placeholder: Drawable): Unit = {}
-
-      override def onLoadFailed(errorDrawable: Drawable): Unit = {}
-
-      override def onResourceReady(resource: Drawable, transition: Transition[_ >: Drawable]): Unit = {
-        ephemeralDrawable(imageDrawable).onUi { setImageDrawable }
-      }
-    })
+      .transforms(new CenterCrop(), new RoundedCorners(CornerRadius))
+      .transition(DrawableTransitionOptions.withCrossFade())
+      .placeholder(new ColorDrawable(Color.TRANSPARENT))
+      .into(target)
+  case (_, Some(ephemeralDrawable)) =>
+    WireGlide().clear(this)
+    setImageDrawable(ephemeralDrawable)
   }
-
-  private val imageDrawable =
-    new RoundedImageAssetDrawable(image, scaleType = ImageAssetDrawable.ScaleType.CenterCrop,
-      cornerRadius = CornerRadius, request = RequestBuilder.Single, background = Some(new ProgressDotsDrawable))
-
-  ephemeralDrawable(imageDrawable).onUi { setImageDrawable }
 
   this.onClick {
     import Threading.Implicits.Ui
@@ -163,20 +152,22 @@ class CollectionImageView(context: Context) extends ImageView(context) with Coll
   }
 }
 
-class CollectionWebLinkPartView(context: Context, attrs: AttributeSet, style: Int) extends WebLinkPartView(context, attrs, style) with CollectionNormalItemView{
+class CollectionWebLinkPartView(context: Context, attrs: AttributeSet, style: Int) extends WebLinkPartView(context, attrs, style) with CollectionNormalItemView {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null, 0)
+
   override def inflate() = inflate(R.layout.collection_message_part_weblink_content)
 }
 
-class CollectionFileAssetPartView(context: Context, attrs: AttributeSet, style: Int) extends FileAssetPartView(context, attrs, style) with CollectionNormalItemView{
+class CollectionFileAssetPartView(context: Context, attrs: AttributeSet, style: Int) extends FileAssetPartView(context, attrs, style) with CollectionNormalItemView {
   def this(context: Context, attrs: AttributeSet) = this(context, attrs, 0)
   def this(context: Context) = this(context, null, 0)
+
   override def layoutList = {
     case _: CollectionFileAssetPartView => R.layout.collection_message_file_asset_content
   }
 
-  this.onClick{
+  this.onClick {
     import Threading.Implicits.Ui
     for {
       false <- expired.head
@@ -198,12 +189,14 @@ class CollectionSimpleWebLinkPartView(context: Context, attrs: AttributeSet, sty
 
   inflate(R.layout.collection_message_part_simple_link_content)
 
-  lazy val urlTextView: TextView    = findById(R.id.ttv__row_conversation__link_preview__url)
+  lazy val urlTextView: TextView = findById(R.id.ttv__row_conversation__link_preview__url)
 
   val urlText =
     message.map(msg => msg.content.find(c => URLUtil.isValidUrl(c.content)).map(_.content).getOrElse(msg.contentString))
 
-  urlText.on(Threading.Ui){ urlTextView.setText }
+  urlText.on(Threading.Ui) {
+    urlTextView.setText
+  }
 
   onClicked { _ =>
     import Threading.Implicits.Ui
@@ -215,7 +208,7 @@ class CollectionSimpleWebLinkPartView(context: Context, attrs: AttributeSet, sty
   registerEphemeral(urlTextView)
 }
 
-case class CollectionItemViewHolder(view: CollectionNormalItemView)(implicit eventContext: EventContext) extends RecyclerView.ViewHolder(view){
+case class CollectionItemViewHolder(view: CollectionNormalItemView)(implicit eventContext: EventContext) extends RecyclerView.ViewHolder(view) {
 
   def setMessageData(messageData: MessageData, content: Option[MessageContent]): Unit = {
     view.setMessageData(messageData, content)

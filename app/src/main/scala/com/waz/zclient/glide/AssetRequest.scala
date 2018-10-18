@@ -17,17 +17,8 @@
  */
 package com.waz.zclient.glide
 
-import java.io.InputStream
+import com.waz.model.{AssetData, AssetId}
 
-import android.content.Context
-import com.bumptech.glide.load.model.{ModelLoader, ModelLoaderFactory, MultiModelLoaderFactory}
-import com.waz.model.AssetId
-import com.waz.zclient.WireContext
-
-class AssetModelLoaderFactory(context: Context) extends ModelLoaderFactory[AssetId, InputStream] {
-  override def build(multiFactory: MultiModelLoaderFactory): ModelLoader[AssetId, InputStream] = {
-    new AssetModelLoader()(context, context.asInstanceOf[WireContext].injector)
-  }
-
-  override def teardown(): Unit = {}
-}
+sealed trait AssetRequest
+case class AssetIdRequest(assetId: AssetId) extends AssetRequest
+case class AssetDataRequest(assetData: AssetData) extends AssetRequest

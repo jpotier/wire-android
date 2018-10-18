@@ -17,22 +17,22 @@
  */
 package com.waz.zclient;
 
-import java.io.InputStream;
-
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import com.bumptech.glide.annotation.GlideModule;
-import com.bumptech.glide.module.AppGlideModule;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.Registry;
-import com.waz.model.AssetId;
-import com.waz.zclient.glide.AssetModelLoaderFactory;
+import com.bumptech.glide.annotation.GlideModule;
+import com.bumptech.glide.module.AppGlideModule;
+import com.waz.zclient.glide.AssetRequest;
+import com.waz.zclient.glide.loaders.AssetRequestModelLoaderFactory;
+
+import java.io.InputStream;
 
 @GlideModule
 public class WireGlideModule extends AppGlideModule {
     @Override
     public void registerComponents(@NonNull Context context, @NonNull Glide glide, @NonNull Registry registry) {
-        registry.prepend(AssetId.class, InputStream.class, new AssetModelLoaderFactory(context));
+        registry.prepend(AssetRequest.class, InputStream.class, new AssetRequestModelLoaderFactory(context));
     }
 }

@@ -19,7 +19,9 @@ package com.waz.zclient.glide
 
 import android.content.Context
 import android.graphics.drawable.Drawable
-import com.waz.model.AssetId
+import android.net.Uri
+import com.waz.model.{AssetData, AssetId}
+import com.waz.utils.wrappers.{AndroidURIUtil, URI}
 import com.waz.zclient.{GlideApp, GlideRequest, GlideRequests}
 
 object WireGlide {
@@ -27,5 +29,9 @@ object WireGlide {
 }
 
 object GlideDrawable {
-  def apply(assetId: AssetId)(implicit context: Context): GlideRequest[Drawable] = WireGlide().load(assetId)
+  def apply(assetId: AssetId)(implicit context: Context): GlideRequest[Drawable] = WireGlide().load(AssetIdRequest(assetId))
+  def apply(assetData: AssetData)(implicit context: Context): GlideRequest[Drawable] = WireGlide().load(AssetDataRequest(assetData))
+  def apply(assetRequest: AssetRequest)(implicit context: Context): GlideRequest[Drawable] = WireGlide().load(assetRequest)
+  def apply(uri: Uri)(implicit context: Context): GlideRequest[Drawable] = WireGlide().load(uri)
+  def apply(uri: URI)(implicit context: Context): GlideRequest[Drawable] = WireGlide().load(AndroidURIUtil.unwrap(uri))
 }

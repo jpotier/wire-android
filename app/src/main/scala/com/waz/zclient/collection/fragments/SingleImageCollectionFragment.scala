@@ -19,7 +19,7 @@ package com.waz.zclient.collection.fragments
 
 import android.content.Context
 import android.graphics.Color
-import android.graphics.drawable.{ColorDrawable, Drawable}
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.support.v4.view.ViewPager.OnPageChangeListener
 import android.support.v4.view.{PagerAdapter, ViewPager}
@@ -27,8 +27,7 @@ import android.util.AttributeSet
 import android.view.View.OnLongClickListener
 import android.view.ViewGroup.LayoutParams
 import android.view._
-import com.bumptech.glide.request.target.CustomViewTarget
-import com.bumptech.glide.request.transition.Transition
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.MessageFilter
 import com.waz.model.{AssetId, MessageData}
@@ -39,14 +38,14 @@ import com.waz.zclient._
 import com.waz.zclient.collection.controllers.CollectionController
 import com.waz.zclient.collection.controllers.CollectionController.{AllContent, ContentType, Images}
 import com.waz.zclient.collection.fragments.SingleImageCollectionFragment.ImageSwipeAdapter
+import com.waz.zclient.conversation.ConversationController
+import com.waz.zclient.glide.GlideDrawable
 import com.waz.zclient.messages.RecyclerCursor
 import com.waz.zclient.messages.RecyclerCursor.RecyclerNotifier
 import com.waz.zclient.messages.controllers.MessageActionsController
 import com.waz.zclient.pages.BaseFragment
 import com.waz.zclient.pages.main.conversationpager.CustomPagerTransformer
 import com.waz.zclient.utils.ViewUtils
-import com.waz.zclient.conversation.ConversationController
-import com.waz.zclient.glide.GlideDrawable
 import com.waz.zclient.views.images.TouchImageView
 
 import scala.collection.mutable
@@ -191,17 +190,11 @@ object SingleImageCollectionFragment {
     })
 
     def setAsset(assetId: AssetId): Unit =
-      GlideDrawable(assetId)(getContext).fitCenter().into(new CustomViewTarget[SwipeImageView, Drawable](this) {
-        override def onResourceCleared(placeholder: Drawable): Unit =
-          setImageDrawable(new ColorDrawable(Color.TRANSPARENT))
-
-        override def onLoadFailed(errorDrawable: Drawable): Unit =
-          setImageDrawable(new ColorDrawable(Color.TRANSPARENT))
-
-        override def onResourceReady(resource: Drawable, transition: Transition[_ >: Drawable]): Unit = {
-          setImageDrawable(resource)
-        }
-      })
+      GlideDrawable(assetId)(getContext)
+        .fitCenter()
+        .transition(DrawableTransitionOptions.withCrossFade())
+        .placeholder(new ColorDrawable(Color.TRANSPARENT))
+        .into(this)
 
     def setMessageData(messageData: MessageData): Unit = {
       this.messageData = Option(messageData)

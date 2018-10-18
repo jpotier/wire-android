@@ -25,20 +25,21 @@ import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.waz.ZLog
 
-class ScaleTransformation(scale: Float) extends BitmapTransformation {
+class ScaleTransformation(scaleX: Float, scaleY: Float) extends BitmapTransformation {
+  def this(scale: Float) = this(scale, scale)
 
-  private implicit val Tag: String = ZLog.ImplicitTag.implicitLogTag + s"($scale)"
+  private implicit val Tag: String = ZLog.ImplicitTag.implicitLogTag + s"($scaleX, $scaleY)"
   private implicit val TagBytes: Array[Byte] = Tag.getBytes(Charset.forName("UTF-8"))
 
   override def transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap = {
 
     val bitmap = pool.get(outWidth, outHeight, Bitmap.Config.ARGB_8888)
 
-    val dx = (toTransform.getWidth - toTransform.getWidth * scale) * 0.5f
-    val dy = (toTransform.getHeight - toTransform.getHeight * scale) * 0.5f
+    val dx = (toTransform.getWidth - toTransform.getWidth * scaleX) * 0.5f
+    val dy = (toTransform.getHeight - toTransform.getHeight * scaleY) * 0.5f
 
     val matrix = new Matrix()
-    matrix.setScale(scale, scale)
+    matrix.setScale(scaleX, scaleY)
     matrix.postTranslate(dx, dy)
 
     val canvas = new Canvas(bitmap)

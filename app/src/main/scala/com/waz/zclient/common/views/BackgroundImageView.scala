@@ -37,5 +37,7 @@ class BackgroundImageView(val context: Context, val attrs: AttributeSet, val def
     Some(picture) <- z.users.selfUser.map(_.picture)
   } yield picture
 
+  setScaleType(ImageView.ScaleType.CENTER_CROP)
+
   pictureId.onUi(id => BackgroundRequest(id).into(this))
 }
