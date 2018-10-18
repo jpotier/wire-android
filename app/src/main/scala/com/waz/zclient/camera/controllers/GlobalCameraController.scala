@@ -314,9 +314,16 @@ class AndroidCamera(info: CameraInfo, texture: SurfaceTexture, w: Int, h: Int, c
   }
 
   private def getPictureSize(pms: CameraParamsWrapper) = {
-    val (bigger, smaller) = pms.get.getSupportedPictureSizes.asScala.map(new CameraSizeWrapper(_)).partition { size =>
+    def partition(sizes: Seq[CameraSizeWrapper]) = sizes.partition { size =>
       size.height >= ImageAssetGenerator.MediumSize
     }
+
+    val sizes = pms.get.getSupportedPictureSizes.asScala.map(new CameraSizeWrapper(_))
+    val sizes_16_9 = sizes.filter { s => s.width.toDouble / s.height == GlobalCameraController.Ratio_16_9 }
+
+    // if it's possible, we want to use a camera with 16:9 ratio
+    val (bigger, smaller) = partition(if (sizes_16_9.nonEmpty) sizes_16_9 else sizes)
+
     if (bigger.nonEmpty) bigger.minBy(_.width) else smaller.maxBy(_.width)
   }
 
@@ -342,6 +349,10 @@ class AndroidCamera(info: CameraInfo, texture: SurfaceTexture, w: Int, h: Int, c
   private def supportsFocusMode(pms: CameraParamsWrapper, mode: String) = Option(pms.get.getSupportedFocusModes).fold(false)(_.contains(mode))
 
   private def setFocusMode(pms: CameraParamsWrapper, mode: String) = if (supportsFocusMode(pms, mode)) pms.get.setFocusMode(mode)
+}
+
+object GlobalCameraController {
+  val Ratio_16_9: Double = 16.0 / 9.0
 }
 
 object WireCamera {
